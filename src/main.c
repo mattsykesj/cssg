@@ -51,16 +51,79 @@ int main(int argc, char *argv[])
     u8 line[256];
     while (fgets(line, sizeof(line), file) != NULL)
     {
-
+        u32 line_index = 0; 
         u32 header_counter = 0;
-        u32 s = 0;
+        // u32 star_counter = 0;
 
-        while (line[s] == '#')
+        for(line_index; line[line_index] != '\0'; line_index++)
         {
-            header_counter++;
-            s++;
+            if(line[line_index] == '#')
+            {
+                header_counter++;
+            }
         }
 
+
+
+        // while(line[star_counter] == '*')
+        // {
+        //     star_counter++;
+        // }
+
+        // //italic
+        // if(star_counter == 1)
+        // {
+        //     // Remove the **/n at the end of the string
+        //     size_t line_length = strlen(line);
+        //     if (line_length > 0 && line[line_length - 1] == '\n' && 
+        //                            line[line_length - 2] == '*')
+        //     {
+        //         line[line_length - 2] = '\0';
+        //     }
+        //     else
+        //     {
+        //         //parsing error not valid italic line.
+        //     }
+
+        //     u8 *text_start_ptr = line + star_counter;
+        //     u8 html_line[1024] = {0};
+        //     snprintf(html_line, sizeof(html_line), "<i>%s</i>\n", text_start_ptr);
+
+        //     size_t html_line_content_length = strlen(html_line);
+
+        //     memcpy(buffer + current_position, html_line, html_line_content_length);
+        //     current_position += html_line_content_length;
+        //     continue;
+        // }
+
+        // //bold
+        // if(star_counter == 2)
+        // {
+        //     // Remove the **/n at the end of the string
+        //     size_t line_length = strlen(line);
+        //     if (line_length > 0 && line[line_length - 1] == '\n' && 
+        //                            line[line_length - 2] == '*' && 
+        //                            line[line_length - 3] == '*')
+        //     {
+        //         line[line_length - 3] = '\0';
+        //     }
+        //     else
+        //     {
+        //         //parsing error not valid bold line.
+        //     }
+
+        //     u8 *text_start_ptr = line + star_counter;
+        //     u8 html_line[1024] = {0};
+        //     snprintf(html_line, sizeof(html_line), "<b>%s</b>\n", text_start_ptr);
+
+        //     size_t html_line_content_length = strlen(html_line);
+
+        //     memcpy(buffer + current_position, html_line, html_line_content_length);
+        //     current_position += html_line_content_length;
+        //     continue;
+        // }
+
+        //headers
         if (header_counter > 0 && header_counter <= 6)
         {
             // Strip the newline character at the end of the line
