@@ -16,6 +16,92 @@
 #define d64 double
 #define bool32 int32_t
 
+typedef enum
+{
+    LineType_Paragraph,
+    LineType_Header,
+    LineType_Blockquote,
+    LineType_Code,
+    LineType_HorizontalRule,
+    LineType_Link,
+    LineType_Image,
+    LineType_OrderedList,
+    LineType_UnorderedList,
+
+} LineType;
+
+static void stripNewLine(char *line)
+{
+    // Strip the newline character at the end of the line
+    size_t lineLength = strlen(line);
+    if (lineLength > 0 && line[lineLength - 1] == '\n')
+    {
+        line[lineLength - 1] = '\0'; // Remove the newline
+    }
+}
+
+static int parseHeader(char *line, u8 *buffer, size_t *currentPosition)
+{
+
+    stripNewLine(line);
+    // TODO(matt): add handling for not a valid header ###test no space.
+    u32 headerCounter = 0;
+
+    while (line[headerCounter] == '#')
+    {
+        headerCounter++;
+    }
+
+    if (headerCounter > 0 && headerCounter <= 6)
+    {
+
+        // Skip '#' characters and the following space
+        char *textStartPtr = line + headerCounter + 1;
+        char htmlLine[1024] = {0};
+        snprintf(htmlLine, sizeof(htmlLine), "<h%d>%s</h%d>\n", headerCounter, textStartPtr, headerCounter);
+
+        size_t htmlLineContentLength = strlen(htmlLine);
+
+        memcpy(buffer + *currentPosition, htmlLine, htmlLineContentLength);
+        *currentPosition += htmlLineContentLength;
+    }
+
+    return 0;
+}
+
+static int parseParagraph(char *line, u8 *buffer, size_t *currentPosition)
+{
+    u8 i = 0;
+    stripNewLine(line);
+
+    char htmlLine[1024] = {0};
+
+    while (line[i] != '\0')
+    {
+        snprintf(htmlLine, sizeof(htmlLine), "%c", line[i]);
+        i++;
+    }
+
+    // snprintf(htmlLine, sizeof(htmlLine), "%s\n", line);
+
+    size_t htmlLineContentLength = strlen(htmlLine);
+
+    memcpy(buffer + *currentPosition, htmlLine, htmlLineContentLength);
+    *currentPosition += htmlLineContentLength;
+
+    // // Skip '#' characters and the following space
+    // char *textStartPtr = line + headerCounter + 1;
+    // char htmlLine[1024] = {0};
+    // snprintf(htmlLine, sizeof(htmlLine), "<h%d>%s</h%d>\n", headerCounter, textStartPtr, headerCounter);
+
+    // size_t htmlLineContentLength = strlen(htmlLine);
+
+    // memcpy(buffer + *currentPosition, htmlLine, htmlLineContentLength);
+    // *currentPosition += htmlLineContentLength;
+
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     for (int i = 0; i < argc; i++)
@@ -34,10 +120,10 @@ int main(int argc, char *argv[])
 
     // allocate memory for reading md file into buffer
     fseek(file, 0, SEEK_END);
-    long file_size = ftell(file);
+    long fileSize = ftell(file);
     fseek(file, 0, SEEK_SET);
 
-    u8 *buffer = (u8 *)malloc(file_size + 1);
+    u8 *buffer = (u8 *)malloc(fileSize + 1);
 
     if (buffer == NULL)
     {
@@ -47,23 +133,40 @@ int main(int argc, char *argv[])
     }
 
     // read the lines into the buffer
-    size_t current_position = 0;
-    u8 line[256];
+    size_t currentPosition = 0;
+    char line[256];
     while (fgets(line, sizeof(line), file) != NULL)
     {
-        u32 line_index = 0; 
-        u32 header_counter = 0;
-        // u32 star_counter = 0;
+        char first = line[0];
+        LineType lineType = LineType_Paragraph;
 
-        for(line_index; line[line_index] != '\0'; line_index++)
+        if (first == '\0' || first == '\n')
         {
-            if(line[line_index] == '#')
-            {
-                header_counter++;
-            }
+            continue; // Skip empty
         }
 
+        if (first == '#')
+            lineType = LineType_Header;
+        else if (first == '`')
+            lineType = LineType_Code;
+        else if (first == '-')
+            lineType = LineType_HorizontalRule;
+        else if (first == '[')
+            lineType = LineType_Link;
+        else if (first == '!')
+            lineType = LineType_Image;
+        else if (first == '>')
+            lineType = LineType_Blockquote;
 
+        switch (lineType)
+        {
+        case LineType_Header:
+            parseHeader(line, buffer, &currentPosition);
+            break;
+        case LineType_Paragraph:
+            parseParagraph(line, buffer, &currentPosition);
+            break;
+        }
 
         // while(line[star_counter] == '*')
         // {
@@ -74,25 +177,25 @@ int main(int argc, char *argv[])
         // if(star_counter == 1)
         // {
         //     // Remove the **/n at the end of the string
-        //     size_t line_length = strlen(line);
-        //     if (line_length > 0 && line[line_length - 1] == '\n' && 
-        //                            line[line_length - 2] == '*')
+        //     size_t lineLength = strlen(line);
+        //     if (lineLength > 0 && line[lineLength - 1] == '\n' &&
+        //                            line[lineLength - 2] == '*')
         //     {
-        //         line[line_length - 2] = '\0';
+        //         line[lineLength - 2] = '\0';
         //     }
         //     else
         //     {
         //         //parsing error not valid italic line.
         //     }
 
-        //     u8 *text_start_ptr = line + star_counter;
-        //     u8 html_line[1024] = {0};
-        //     snprintf(html_line, sizeof(html_line), "<i>%s</i>\n", text_start_ptr);
+        //     u8 *textStartPtr = line + star_counter;
+        //     u8 htmlLine[1024] = {0};
+        //     snprintf(htmlLine, sizeof(htmlLine), "<i>%s</i>\n", textStartPtr);
 
-        //     size_t html_line_content_length = strlen(html_line);
+        //     size_t htmlLineContentLength = strlen(htmlLine);
 
-        //     memcpy(buffer + current_position, html_line, html_line_content_length);
-        //     current_position += html_line_content_length;
+        //     memcpy(buffer + currentPosition, htmlLine, htmlLineContentLength);
+        //     currentPosition += htmlLineContentLength;
         //     continue;
         // }
 
@@ -100,60 +203,36 @@ int main(int argc, char *argv[])
         // if(star_counter == 2)
         // {
         //     // Remove the **/n at the end of the string
-        //     size_t line_length = strlen(line);
-        //     if (line_length > 0 && line[line_length - 1] == '\n' && 
-        //                            line[line_length - 2] == '*' && 
-        //                            line[line_length - 3] == '*')
+        //     size_t lineLength = strlen(line);
+        //     if (lineLength > 0 && line[lineLength - 1] == '\n' &&
+        //                            line[lineLength - 2] == '*' &&
+        //                            line[lineLength - 3] == '*')
         //     {
-        //         line[line_length - 3] = '\0';
+        //         line[lineLength - 3] = '\0';
         //     }
         //     else
         //     {
         //         //parsing error not valid bold line.
         //     }
 
-        //     u8 *text_start_ptr = line + star_counter;
-        //     u8 html_line[1024] = {0};
-        //     snprintf(html_line, sizeof(html_line), "<b>%s</b>\n", text_start_ptr);
+        //     u8 *textStartPtr = line + star_counter;
+        //     u8 htmlLine[1024] = {0};
+        //     snprintf(htmlLine, sizeof(htmlLine), "<b>%s</b>\n", textStartPtr);
 
-        //     size_t html_line_content_length = strlen(html_line);
+        //     size_t htmlLineContentLength = strlen(htmlLine);
 
-        //     memcpy(buffer + current_position, html_line, html_line_content_length);
-        //     current_position += html_line_content_length;
+        //     memcpy(buffer + currentPosition, htmlLine, htmlLineContentLength);
+        //     currentPosition += htmlLineContentLength;
         //     continue;
         // }
 
-        //headers
-        if (header_counter > 0 && header_counter <= 6)
-        {
-            // Strip the newline character at the end of the line
-            size_t line_length = strlen(line);
-            if (line_length > 0 && line[line_length - 1] == '\n')
-            {
-                line[line_length - 1] = '\0'; // Remove the newline
-            }
-
-            u8 *text_start_ptr = line + header_counter + 1;
-            u8 html_line[1024] = {0};
-            snprintf(html_line, sizeof(html_line), "<h%d>%s</h%d>\n", header_counter, text_start_ptr, header_counter);
-
-            size_t html_line_content_length = strlen(html_line);
-
-            memcpy(buffer + current_position, html_line, html_line_content_length);
-            current_position += html_line_content_length;
-            continue;
-        }
-
-        size_t line_content_length = strlen(line);
-
-        memcpy(buffer + current_position, line, line_content_length);
-        current_position += line_content_length;
+        // headers
     }
 
-    buffer[current_position] = '\0'; // Null terminate the buffer
+    buffer[currentPosition] = '\0'; // Null terminate the buffer
 
     printf("File contents:\n%s\n", buffer);
-    printf("the file size is %ld!\n", file_size);
+    printf("the file size is %ld!\n", fileSize);
 
     fclose(file);
     free(buffer);
