@@ -6,14 +6,6 @@
 #include <windows.h>
 #include "parser.h"
 
-#ifdef DEBUG
-char *contentDir = "../../content";
-char *outputDir = "../../output";
-#else
-char *contentDir = "./content";
-char *outputDir = "./output";
-#endif
-
 #define BASE_DIR "D:\\work\\cssg"
 
 int main(int argc, char *argv[])
@@ -27,9 +19,6 @@ int main(int argc, char *argv[])
     processMarkdownDirectory(BASE_DIR);
     generatePage(BASE_DIR);
 
-    printf("Press any key to continue...\n");
-    getchar(); // Wait for any key press
-    printf("You pressed a key. Program will exit now.\n");
-
+    printf("Succesfully generated index.\n");
     return 0;
 }

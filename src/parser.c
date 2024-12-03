@@ -26,7 +26,8 @@
 
 #define NEWLINE_TAG "\n"
 
-#define BUFFER_RESIZE_RATIO 1.2
+#define BUFFER_RESIZE_RATIO 1.4
+#define MAX_BUFFER_SIZE (200 * 1024 * 1024) // 200 MB
 
 typedef struct
 {
@@ -108,7 +109,54 @@ static int appendLineToBuffer(u8 *buffer, size_t *currentPosition, size_t *buffe
     *currentPosition += contentLength;
 }
 
-static int parseHeader(char *line, u8 *buffer, size_t *bufferSize, size_t *currentPosition)
+int allocateHtmlBuffer(HtmlBuffer *htmlBuffer, size_t initialSize)
+{
+    htmlBuffer->Address = (u8 *)malloc(initialSize);
+    if (!htmlBuffer->Address)
+    {
+        printf("Memory allocation failed.\n");
+        return -1;
+    }
+    htmlBuffer->CurrentPosition = 0;
+    htmlBuffer->BufferSize = initialSize;
+    memset(htmlBuffer->Address, 0, initialSize); // Clear the buffer
+    return 0;
+}
+
+static int reAllocateHtmlBuffer(HtmlBuffer *htmlBufferPtr)
+{
+    size_t newBufferSize = htmlBufferPtr->BufferSize * BUFFER_RESIZE_RATIO;
+    printf("Buffer too small reallocating memory.\n");
+
+    if (newBufferSize > MAX_BUFFER_SIZE)
+    {
+        printf("Error: Buffer cannot grow beyond %zu bytes. Current size: %zu bytes.\n", MAX_BUFFER_SIZE, htmlBufferPtr->BufferSize);
+        return -1;
+    }
+
+    u8 *newAddress = (u8 *)realloc(htmlBufferPtr->Address, newBufferSize);
+    if (!newAddress)
+    {
+        printf("Memory reallocation failed.\n");
+        return -1;
+    }
+
+    htmlBufferPtr->Address = newAddress;
+    htmlBufferPtr->BufferSize = newBufferSize;
+}
+
+static int appendLineToHtmlBuffer(HtmlBuffer *htmlBufferPtr, const char *contentLine, size_t contentLength)
+{
+    while (htmlBufferPtr->CurrentPosition + contentLength > htmlBufferPtr->BufferSize)
+    {
+        reAllocateHtmlBuffer(htmlBufferPtr);
+    }
+
+    memcpy(htmlBufferPtr->Address + htmlBufferPtr->CurrentPosition, contentLine, contentLength);
+    htmlBufferPtr->CurrentPosition += contentLength;
+}
+
+static int parseHeader(char *line, HtmlBuffer *htmlBufferPtr)
 {
 
     stripNewLine(line);
@@ -129,13 +177,14 @@ static int parseHeader(char *line, u8 *buffer, size_t *bufferSize, size_t *curre
         snprintf(htmlLine, sizeof(htmlLine), "<h%d>%s</h%d>\n", headerCounter, textStartPtr, headerCounter);
 
         size_t htmlLineLength = strlen(htmlLine);
-        appendLineToBuffer(buffer, currentPosition, bufferSize, htmlLine, htmlLineLength);
+
+        appendLineToHtmlBuffer(htmlBufferPtr, htmlLine, htmlLineLength);
     }
 
     return 0;
 }
 
-static int parseParagraph(char *line, u8 *buffer, size_t *bufferSize, size_t *currentPosition)
+static int parseParagraph(char *line, HtmlBuffer *htmlBufferPtr)
 {
     u8 i = 0;
     u32 htmlLinePosition = 0;
@@ -203,7 +252,7 @@ static int parseParagraph(char *line, u8 *buffer, size_t *bufferSize, size_t *cu
 
     // write HTML line to buffer
     size_t htmlLineLength = strlen(htmlLine);
-    appendLineToBuffer(buffer, currentPosition, bufferSize, htmlLine, htmlLineLength);
+    appendLineToHtmlBuffer(htmlBufferPtr, htmlLine, htmlLineLength);
 
     return 0;
 }
@@ -230,27 +279,13 @@ int generateHtmlFromMarkdown(const char *markdownPath, const char *outputPath)
     // allocate memory for reading md file into buffer
     fseek(file, 0, SEEK_END);
     long fileSize = ftell(file);
-    size_t bufferSize = fileSize * 2;
+    size_t bufferSize = fileSize;
     fseek(file, 0, SEEK_SET);
 
-    u8 *buffer = (u8 *)malloc(bufferSize);
-    if (buffer == NULL)
-    {
-        printf("Memory allocation failed: %s\n", strerror(errno));
-        fclose(file);
-        fclose(htmlFile);
-        return 1;
-    }
-    memset(buffer, 0, bufferSize); // Clear the buffer
-
     HtmlBuffer htmlBuffer = {0};
-
-    htmlBuffer.Address = buffer;
-    htmlBuffer.BufferSize = bufferSize;
-    htmlBuffer.CurrentPosition = 0;
+    allocateHtmlBuffer(&htmlBuffer, bufferSize);
 
     // read the lines into the buffer
-    size_t currentPosition = 0;
     char line[256];
     while (fgets(line, sizeof(line), file) != NULL)
     {
@@ -278,22 +313,22 @@ int generateHtmlFromMarkdown(const char *markdownPath, const char *outputPath)
         switch (lineType)
         {
         case LineType_Header:
-            parseHeader(line, buffer, &bufferSize, &currentPosition);
+            parseHeader(line, &htmlBuffer);
             break;
         case LineType_Paragraph:
-            parseParagraph(line, buffer, &bufferSize, &currentPosition);
+            parseParagraph(line, &htmlBuffer);
             break;
         }
     }
 
-    // buffer[currentPosition] = '\0'; // Null terminate the buffer
+    htmlBuffer.Address[htmlBuffer.CurrentPosition] = '\0'; // Null terminate the buffer
 
     // printf("File contents:\n%s\n", buffer); DEBUG
-    fprintf(htmlFile, "%s", buffer);
+    fprintf(htmlFile, "%s", htmlBuffer.Address);
     fclose(htmlFile);
 
     fclose(file);
-    free(buffer);
+    free(htmlBuffer.Address);
 
     return 0;
 }
@@ -367,21 +402,14 @@ int generatePage(const char *basePath)
     // allocate memory for reading layout file into buffer
     fseek(layoutFile, 0, SEEK_END);
     long fileSize = ftell(layoutFile);
-    size_t bufferSize = fileSize * 4;
+    size_t bufferSize = fileSize;
     fseek(layoutFile, 0, SEEK_SET);
 
-    u8 *buffer = (u8 *)malloc(bufferSize);
-    if (buffer == NULL)
-    {
-        printf("Memory allocation failed: %s\n", strerror(errno));
-        fclose(layoutFile);
-        return 1;
-    }
-    memset(buffer, 0, bufferSize); // Clear the buffer
+    HtmlBuffer htmlBuffer;
+    allocateHtmlBuffer(&htmlBuffer, bufferSize);
 
     // read the lines into the buffer
     // need to check for cases where we have text and {{}} on the same line outside of the braces.
-    size_t currentPosition = 0;
     char line[256];
     while (fgets(line, sizeof(line), layoutFile) != NULL)
     {
@@ -430,13 +458,13 @@ int generatePage(const char *basePath)
                     size_t partialSize = partialFileSize;
                     fseek(partialFile, 0, SEEK_SET);
 
-                    // TODO(matt) handle if buffer is too small
-                    if (currentPosition + partialSize > bufferSize)
+                    if (htmlBuffer.CurrentPosition + partialSize > htmlBuffer.BufferSize)
                     {
-                        // reAllocateBuffer(buffer, &bufferSize);
+                        reAllocateHtmlBuffer(&htmlBuffer);
                     }
-                    fread(buffer + currentPosition, sizeof(char), partialSize, partialFile);
-                    currentPosition += partialSize;
+
+                    fread(htmlBuffer.Address + htmlBuffer.CurrentPosition, sizeof(char), partialSize, partialFile);
+                    htmlBuffer.CurrentPosition += partialSize;
 
                     partialWasInserted = 1;
 
@@ -454,15 +482,15 @@ int generatePage(const char *basePath)
             snprintf(htmlLine, sizeof(htmlLine), "%s", line);
 
             size_t htmlLineLength = strlen(htmlLine);
-            appendLineToBuffer(buffer, &currentPosition, &bufferSize, htmlLine, htmlLineLength);
+            appendLineToHtmlBuffer(&htmlBuffer, htmlLine, htmlLineLength);
         }
     }
 
-    buffer[currentPosition] = '\0'; // Null terminate the buffer
+    htmlBuffer.Address[htmlBuffer.CurrentPosition] = '\0'; // Null terminate the buffer
 
-    printf("File contents:\n%s\n", buffer);
+    //printf("File contents:\n%s\n", htmlBuffer.Address); DEBUG
 
-    FILE *indexFile = fopen(outputPath, "wb");
+    FILE *indexFile = fopen(outputPath, "w");
     if (indexFile == NULL)
     {
         printf("Error opening file for writing: %s\n", outputPath);
@@ -470,16 +498,17 @@ int generatePage(const char *basePath)
     }
 
     // Write the buffer to the file
-    size_t bytesWritten = fwrite(buffer, 1, bufferSize, indexFile);
-    if (bytesWritten != bufferSize)
+    size_t validLength = strlen((char *)htmlBuffer.Address);
+    size_t bytesWritten = fwrite(htmlBuffer.Address, sizeof(char), validLength, indexFile);
+    if (bytesWritten != validLength)
     {
-        printf("Error writing to file: Only %zu out of %zu bytes were written\n", bytesWritten, bufferSize);
+        printf("Error writing to file: Only %zu out of %zu bytes were written\n", bytesWritten, validLength);
     }
 
     // Close the files
     fclose(indexFile);
     fclose(layoutFile);
-    free(buffer);
+    free(htmlBuffer.Address);
 
     return 0;
 }
