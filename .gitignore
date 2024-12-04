@@ -1,0 +1,12 @@
+# Ignore build output files
+/bin/
+*.exe
+*.ilk
+*.pdb
+
+# Ignore Visual Studio files
+.vs/
+.vscode/
+
+# Ignore Windows specific files
+Thumbs.db

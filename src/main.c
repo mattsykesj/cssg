@@ -19,6 +19,6 @@ int main(int argc, char *argv[])
     processMarkdownDirectory(BASE_DIR);
     generatePage(BASE_DIR);
 
-    printf("Succesfully generated index.\n");
+    printf("Succesfully generated index.html\n");
     return 0;
 }

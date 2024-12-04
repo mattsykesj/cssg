@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <stdint.h>
 
+#include "buffer.h"
+
 #define u8 uint8_t
 #define u16 uint16_t
 #define u32 uint32_t
@@ -29,13 +31,6 @@
 #define BUFFER_RESIZE_RATIO 1.4
 #define MAX_BUFFER_SIZE (200 * 1024 * 1024) // 200 MB
 
-typedef struct
-{
-    u8 *Address;
-    size_t CurrentPosition;
-    size_t BufferSize;
-} HtmlBuffer;
-
 typedef enum
 {
     LineType_Paragraph,
@@ -49,77 +44,6 @@ typedef enum
     LineType_UnorderedList,
 
 } LineType;
-
-static void stripNewLine(char *line)
-{
-    size_t lineLength = strlen(line);
-    while (lineLength > 0 && (line[lineLength - 1] == '\n' || line[lineLength - 1] == '\r'))
-    {
-        line[--lineLength] = '\0';
-    }
-}
-
-static int appendToHtmlLine(char *htmlLine, u32 position, char *tag, size_t bufferSize)
-{
-    size_t tagLength = strlen(tag);
-    if (position + tagLength >= bufferSize)
-    {
-        // Prevent writing over buffer size
-        return position;
-    }
-
-    memcpy(htmlLine + position, tag, tagLength);
-    return position += strlen(tag);
-}
-
-int allocateHtmlBuffer(HtmlBuffer *htmlBuffer, size_t initialSize)
-{
-    htmlBuffer->Address = (u8 *)malloc(initialSize);
-    if (!htmlBuffer->Address)
-    {
-        printf("Memory allocation failed.\n");
-        return -1;
-    }
-    htmlBuffer->CurrentPosition = 0;
-    htmlBuffer->BufferSize = initialSize;
-    memset(htmlBuffer->Address, 0, initialSize); // Clear the buffer
-    return 0;
-}
-
-static int reAllocateHtmlBuffer(HtmlBuffer *htmlBufferPtr)
-{
-    size_t newBufferSize = htmlBufferPtr->BufferSize * BUFFER_RESIZE_RATIO;
-    printf("Buffer too small reallocating memory.\n");
-
-    if (newBufferSize > MAX_BUFFER_SIZE)
-    {
-        printf("Error: Buffer cannot grow beyond %zu bytes. Current size: %zu bytes.\n", MAX_BUFFER_SIZE, htmlBufferPtr->BufferSize);
-        return -1;
-    }
-
-    u8 *newAddress = (u8 *)realloc(htmlBufferPtr->Address, newBufferSize);
-    if (!newAddress)
-    {
-        printf("Memory reallocation failed.\n");
-        return -1;
-    }
-
-    htmlBufferPtr->Address = newAddress;
-    htmlBufferPtr->BufferSize = newBufferSize;
-    return 0;
-}
-
-static int appendLineToHtmlBuffer(HtmlBuffer *htmlBufferPtr, const char *contentLine, size_t contentLength)
-{
-    while (htmlBufferPtr->CurrentPosition + contentLength > htmlBufferPtr->BufferSize)
-    {
-        reAllocateHtmlBuffer(htmlBufferPtr);
-    }
-
-    memcpy(htmlBufferPtr->Address + htmlBufferPtr->CurrentPosition, contentLine, contentLength);
-    htmlBufferPtr->CurrentPosition += contentLength;
-    return 0;
-}
 
 static int parseHeader(char *line, HtmlBuffer *htmlBufferPtr)
 {
