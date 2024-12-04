@@ -93,4 +93,4 @@ The program will take the content from your Markdown files, apply the layout fro
 
 ## Additional Notes
 
-The program currently requires running from the root directory of your project (where the `config.toml` file is located) in order to work properly. You may need to ensure you’re executing the program from the right place.
+The program currently requires running from the root directory of your project in order to work properly. You may need to ensure you’re executing the program from the right place.
