@@ -52,23 +52,23 @@ typedef enum
 
 static void stripNewLine(char *line)
 {
-    // Strip the newline character at the end of the line
     size_t lineLength = strlen(line);
-    if (lineLength > 0 && line[lineLength - 1] == '\n')
+    while (lineLength > 0 && (line[lineLength - 1] == '\n' || line[lineLength - 1] == '\r'))
     {
-        line[lineLength - 1] = '\0'; // Remove the newline
+        line[--lineLength] = '\0';
     }
 }
 
 static int appendToHtmlLine(char *htmlLine, u32 position, char *tag, size_t bufferSize)
 {
-    if (position >= bufferSize)
+    size_t tagLength = strlen(tag);
+    if (position + tagLength >= bufferSize)
     {
         // Prevent writing over buffer size
         return position;
     }
 
-    snprintf(htmlLine + position, bufferSize, tag);
+    memcpy(htmlLine + position, tag, tagLength);
     return position += strlen(tag);
 }
 
