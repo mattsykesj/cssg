@@ -14,6 +14,30 @@ The **parser** is **actively under development**. Currently, it only supports th
 
 The parser is being continuously updated, and additional features like lists, links, images, and more will be added.
 
+## Current Work
+
+### Features in Progress
+
+- **Improving Markdown Parsing**: 
+  - Currently working on adding support for parsing more complex Markdown syntax such as lists, links, images, and code blocks.
+  
+- **Cross-Platform Support**: 
+  - Expanding the project to be compatible with Linux and macOS platforms. Currently, the project is Windows-only.
+
+- **Template System**: 
+  - Developing a more flexible and customizable templating system for layouts, allowing users to define multiple layouts and manage content more dynamically.
+
+- **Configuration File**: 
+  - Adding support for a configuration file (e.g., TOML, JSON, or YAML) to specify directories, output paths, and other customizable settings, reducing the need to hardcode paths in the source code.
+
+- **Performance Optimization**: 
+  - Working on performance improvements, including faster Markdown processing and better memory management.
+
+- **Bug Fixes**: 
+  - Addressing any known issues and improving code stability.
+
+Stay tuned for upcoming updates as the project continues to evolve!
+
 ### Why This Project?
 
 I built this because I wanted a lightweight, **minimalistic static site generator** for my weekend projects and personal websites. I didn’t want the complexity of bigger tools like Jekyll, so I started from scratch and built this simple tool.
