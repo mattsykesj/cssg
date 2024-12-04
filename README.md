@@ -118,3 +118,7 @@ The program will take the content from your Markdown files, apply the layout fro
 ## Additional Notes
 
 The program currently requires running from the root directory of your project in order to work properly. You may need to ensure you’re executing the program from the right place.
+
+## License
+
+This project is licensed under the CC0 1.0 Universal (CC0 1.0) Public Domain Dedication. You can freely use, modify, and distribute it as you wish.
