@@ -72,43 +72,6 @@ static int appendToHtmlLine(char *htmlLine, u32 position, char *tag, size_t buff
     return position += strlen(tag);
 }
 
-// static int reAllocateBuffer(u8 *buffer, size_t *bufferSize)
-// {
-//     printf("Buffer too small, reallocating new buffer %s", NEWLINE_TAG);
-//     size_t newBufferSize = *bufferSize * BUFFER_RESIZE_RATIO;
-//     u8 *newBuffer = (u8 *)realloc(buffer, newBufferSize);
-//     if (!newBuffer)
-//     {
-//         printf("Memory reallocation failed. %s", NEWLINE_TAG);
-//         return -1;
-//     }
-
-//     buffer = newBuffer;
-//     *bufferSize = newBufferSize;
-//     return 0;
-// }
-
-static int appendLineToBuffer(u8 *buffer, size_t *currentPosition, size_t *bufferSize, const char *contentLine, size_t contentLength)
-{
-    // if (*currentPosition + contentLength > *bufferSize)
-    // {
-    //     printf("Buffer too small, reallocating new buffer %s", NEWLINE_TAG);
-    //     size_t newBufferSize = *bufferSize * 2;
-    //     u8 *newBuffer = (u8 *)realloc(buffer, newBufferSize);
-    //     if (!newBuffer)
-    //     {
-    //         printf("Memory reallocation failed. %s", NEWLINE_TAG);
-    //         return -1;
-    //     }
-
-    //     buffer = newBuffer;
-    //     *bufferSize = newBufferSize;
-    // }
-
-    memcpy(buffer + *currentPosition, contentLine, contentLength);
-    *currentPosition += contentLength;
-}
-
 int allocateHtmlBuffer(HtmlBuffer *htmlBuffer, size_t initialSize)
 {
     htmlBuffer->Address = (u8 *)malloc(initialSize);
@@ -143,6 +106,7 @@ static int reAllocateHtmlBuffer(HtmlBuffer *htmlBufferPtr)
 
     htmlBufferPtr->Address = newAddress;
     htmlBufferPtr->BufferSize = newBufferSize;
+    return 0;
 }
 
 static int appendLineToHtmlBuffer(HtmlBuffer *htmlBufferPtr, const char *contentLine, size_t contentLength)
@@ -154,6 +118,7 @@ static int appendLineToHtmlBuffer(HtmlBuffer *htmlBufferPtr, const char *content
 
     memcpy(htmlBufferPtr->Address + htmlBufferPtr->CurrentPosition, contentLine, contentLength);
     htmlBufferPtr->CurrentPosition += contentLength;
+    return 0;
 }
 
 static int parseHeader(char *line, HtmlBuffer *htmlBufferPtr)
@@ -475,7 +440,7 @@ int generatePage(const char *basePath)
             i++;
         }
 
-        // skip appending lines where we inserted partials
+        // If we didnt process a partial add like normal, only skip when we process partial views
         if (partialWasInserted == 0)
         {
             char htmlLine[1024] = {0};
@@ -488,7 +453,7 @@ int generatePage(const char *basePath)
 
     htmlBuffer.Address[htmlBuffer.CurrentPosition] = '\0'; // Null terminate the buffer
 
-    //printf("File contents:\n%s\n", htmlBuffer.Address); DEBUG
+    // printf("File contents:\n%s\n", htmlBuffer.Address); DEBUG
 
     FILE *indexFile = fopen(outputPath, "w");
     if (indexFile == NULL)
