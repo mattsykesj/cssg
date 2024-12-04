@@ -1,3 +1,4 @@
+
 # Simple Static Site Generator in C (CSSG) - Dev Branch
 
 ## Introduction
@@ -27,35 +28,69 @@ I built this because I wanted a lightweight, **minimalistic static site generato
 
 ## Usage
 
-1. Clone the repository.
-2. Add your `.md` files to the `content` folder.
-3. Add a layout file to the `partials` folder:
-   - Create a `_layout.html` file in the `partials` directory.
-   - In the layout, insert `{{ "name_of_md.html" }}` where you want the content to be injected.
-   - Example:
-     ```html
-     <!-- _layout.html -->
-     <html>
-     <head><title>{{ title }}</title></head>
-     <body>
-       <header><h1>{{ title }}</h1></header>
-       <main>
-         {{ content.html }}
-       </main>
-     </body>
-     </html>
-     ```
+### 1. Clone the repository:
 
-4. Update the src in `main.c` to point to your root directory.
-5. Modify the `build_debug.bat` or `build_release.bat` to point to the correct folders.
-   - The generator will take the content from your Markdown files, apply the layout from `_layout.html`, and output the HTML files to the `public` folder (e.g., `index.html`).
-
-
-Note currently the program uses the windows function for current directory and needs to be run from the root directory to work correctly.
-
-example dev setup
 ```bash
 git clone https://github.com/mattsykesj/cssg.git
 cd cssg
-./build_debug.bat
+```
+
+### 2. Add your `.md` files to the `content` folder.
+
+### 3. Add a layout file to the `partials` folder:
+
+- Create a `_layout.html` file in the `partials` directory.
+- In the layout, insert `{{ "name_of_md.html" }}` where you want the content to be injected.
+
+Example of the layout file:
+
+```html
+<!-- _layout.html -->
+<html>
+<head><title>{{ title }}</title></head>
+<body>
+  <header><h1>{{ title }}</h1></header>
+  <main>
+    {{ content.html }}
+  </main>
+</body>
+</html>
+```
+
+### 4. Build the executable:
+
+Run the `build_debug.bat` or `build_release.bat` to generate the executable. These batch files will use Clang to compile the code into a Windows executable. Make sure you have **Clang** installed on your machine before proceeding.
+
+**Note:** This project currently relies on Windows-specific functions and the build system is tailored for Clang.
+
+### 5. Generate Static HTML:
+
+Once you’ve built the executable, you can run it to generate your static site.
+
+For **debug** build:
+
+```bash
 ./bin/debug/cssg.exe
+```
+
+For **release** build:
+
+```bash
+./bin/release/cssg.exe
+```
+
+The program will take the content from your Markdown files, apply the layout from `_layout.html`, and output the HTML files to the `public` folder (e.g., `index.html`).
+
+---
+
+## Limitations
+
+- **Windows-only**: This project is currently designed for Windows and relies on Windows-specific file path handling and functions.
+- **Clang**: The `build_debug.bat` and `build_release.bat` files use **Clang** as the compiler. If you are working on a different platform or using a different compiler, you'll need to adjust the build process.
+- **Features in Progress**: The parser currently only supports **headers**, **bold**, and **italics**. Additional Markdown features will be added in future updates.
+
+---
+
+## Additional Notes
+
+The program currently requires running from the root directory of your project (where the `config.toml` file is located) in order to work properly. You may need to ensure you’re executing the program from the right place.
