@@ -46,11 +46,16 @@ I built this because I wanted a lightweight, **minimalistic static site generato
      </html>
      ```
 
-4. Update the src in main.c to point to your root directory.
+4. Update the src in `main.c` to point to your root directory.
 5. Modify the `build_debug.bat` or `build_release.bat` to point to the correct folders.
    - The generator will take the content from your Markdown files, apply the layout from `_layout.html`, and output the HTML files to the `public` folder (e.g., `index.html`).
 
+
+Note currently the program uses the windows function for current directory and needs to be run from the root directory to work correctly.
+
+example dev setup
 ```bash
 git clone https://github.com/mattsykesj/cssg.git
 cd cssg
 ./build_debug.bat
+./bin/debug/cssg.exe

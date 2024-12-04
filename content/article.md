@@ -1,4 +1,3 @@
-# Welcome to Our Website
 
 We are thrilled to have you here! This website is designed to **inform**, *inspire*, and *engage* with you.
 
@@ -20,7 +19,3 @@ Our mission is simple:
 - We're **passionate** about our work.
 - Your *satisfaction* is our priority.
 - Together, we can make a difference!
-
-## Stay Connected
-
-testing multiple parses x2

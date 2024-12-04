@@ -6,19 +6,26 @@
 #include <windows.h>
 #include "parser.h"
 
-#define BASE_DIR "D:\\work\\cssg"
+#define MAX_PATH_LEN 260
 
 int main(int argc, char *argv[])
 {
-    for (int i = 0; i < argc; i++)
+    // Buffer to store the current working directory
+    char baseDir[MAX_PATH_LEN];
+
+    // Get the current working directory
+    if (GetCurrentDirectory(MAX_PATH_LEN, baseDir) == 0)
     {
-        printf("argv[%d] = %s\n", i, argv[i]);
+        fprintf(stderr, "Error: Unable to get current directory. Error code: %d\n", GetLastError());
+        return 1;
     }
-    printf("\n*argv = %s\n", *argv);
 
-    processMarkdownDirectory(BASE_DIR);
-    generatePage(BASE_DIR);
+    // Print the current directory (for debugging purposes)
+    printf("Current directory: %s\n", baseDir);
 
-    printf("Succesfully generated index.html\n");
+    processMarkdownDirectory(baseDir);
+    generatePage(baseDir);
+
+    printf("Successfully generated index.html\n");
     return 0;
 }
